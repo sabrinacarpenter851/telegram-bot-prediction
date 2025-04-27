@@ -1,8 +1,8 @@
-import os
-import logging
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import random
+import logging
+import os
 
 # Логування
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -97,19 +97,21 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         else:
             await update.message.reply_text("Не зрозумів команду. Натисни /start або скористайся кнопками.")
 
+# Функція обробки помилок
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обробка помилок."""
+    logger.error(f"Exception while handling update: {context.error}")
+
 # Основна функція
 def main() -> None:
-    # Отримання токену з змінної середовища
-    bot_token = os.getenv("BOT_TOKEN")
-    if not bot_token:
-        raise ValueError("BOT_TOKEN не знайдений у змінних середовища!")
+    application = Application.builder().token(os.getenv("BOT_TOKEN")).build()
 
-    # Створення об'єкта додатка з токеном
-    application = Application.builder().token(bot_token).build()
-
-    # Додаємо хендлери
+    # Додаємо обробники команд
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
+    # Реєструємо обробник помилок
+    application.add_error_handler(error_handler)
 
     # Запускаємо бота
     application.run_polling()
